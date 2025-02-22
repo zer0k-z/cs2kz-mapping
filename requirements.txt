@@ -1,0 +1,4 @@
+requests==2.32.3
+steam @ git+https://github.com/solsticegamestudios/steam@v1.6.1
+vdf==4.0
+psutil==7.0.0
