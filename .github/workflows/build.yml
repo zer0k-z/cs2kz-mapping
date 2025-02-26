@@ -64,9 +64,18 @@ jobs:
         name: build-artifacts
         path: ./artifacts
 
+    - name: Create Tag
+      id: create_tag
+      run: |
+        TAG_NAME="latest"
+        echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+        git tag -f $TAG_NAME
+        git push -f origin $TAG_NAME
+
     - name: Create and Upload Release
       uses: softprops/action-gh-release@v2
       with:
         files: ./artifacts/*
+        tag_name: ${{ env.TAG_NAME }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
