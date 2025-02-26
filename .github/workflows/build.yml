@@ -1,0 +1,86 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Build setup.py
+      run: pyinstaller --onefile setup.py
+
+    - name: Build verify.py
+      run: pyinstaller --onefile verify.py
+
+    - name: Build run-dedicated.py
+      run: pyinstaller --onefile run-dedicated.py
+
+    - name: Build run-listen.py
+      run: pyinstaller --onefile run-listen.py
+      
+    - name: Build run-mapping.py
+      run: pyinstaller --onefile run-mapping.py
+      
+    - name: Build run-insecure.py
+      run: pyinstaller --onefile run-insecure.py
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: |
+          dist/setup.exe
+          dist/verify.exe
+          dist/run-dedicated.exe
+          dist/run-listen.exe
+          dist/run-mapping.exe
+          dist/run-insecure.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+        path: ./artifacts
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: latest
+        release_name: Release
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts
+        asset_name: build-artifacts.zip
+        asset_content_type: application/zip

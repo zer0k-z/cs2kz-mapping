@@ -3,6 +3,7 @@ from steam.client import SteamClient
 from steam.client.cdn import CDNClient
 import time
 import common
+import steam.protobufs.steammessages_contentsystem_pb2
 
 APP_ID = 730 
 FILE_PATHS = ['game/csgo/gameinfo.gi', 'game/csgo_core/gameinfo.gi']  
