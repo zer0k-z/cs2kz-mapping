@@ -15,7 +15,7 @@ if __name__ == '__main__':
     
     cs2 = os.path.join(path, 'game', 'bin', 'win64', 'cs2.exe')
     process = subprocess.Popen([cs2, '-dedicated', '+map de_dust2', '-insecure'])
-    process.wait()
+
     time.sleep(1)
 
     restore_files(backup_path, gameinfo_path, core_backup_path, core_gameinfo_path)
