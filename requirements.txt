@@ -1,7 +1,6 @@
-gevent==23.9.0.post1
-gevent-eventemitter==2.1
 protobuf==3.20.3
-protobuf-py3==2.5.1
+gevent
+gevent-eventemitter==2.1
 psutil==7.0.0
 requests==2.32.3
 steam @ git+https://github.com/solsticegamestudios/steam@v1.6.1

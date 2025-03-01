@@ -11,8 +11,7 @@ FILE_PATHS = ['game/csgo/gameinfo.gi', 'game/csgo_core/gameinfo.gi']
 print('Attempting to restore gameinfo files...')
 path = common.get_cs2_path()
 if path is None:
-    print('Failed to get CS2 path. Closing in 3 seconds...')
-    time.sleep(3)
+    print('Failed to get CS2 path.')
     exit()
     
 # Initialize Steam client
