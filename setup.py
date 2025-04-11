@@ -83,6 +83,10 @@ def setup_asset_bin(cs2_dir: str):
     print(f"Setting up asset bin...")
     shutil.copyfile(os.path.join(cs2_dir, "game", "csgo", "readonly_tools_asset_info.bin"), os.path.join(cs2_dir, "game", "csgo", "addons", "metamod", "readonly_tools_asset_info.bin"))
 
+def setup_metamod_content_path(path: str):
+    print('Creating necessary folder for hammer...')
+    os.makedirs(os.path.join(path, 'content', 'csgo', 'addons', 'metamod'), exist_ok = True)
+    
 path = get_cs2_path()
 if path is None:
     print("Failed to get CS2 path.")
@@ -92,6 +96,7 @@ print(f"Setting up CS2KZ in {path}...")
 download_and_extract_metamod(path)
 download_cs2kz(path)
 setup_asset_bin(path)
+setup_metamod_content_path(path)
 
 print("Setup complete, closing in 3 seconds...")
 time.sleep(3)
