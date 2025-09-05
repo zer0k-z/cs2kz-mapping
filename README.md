@@ -11,3 +11,5 @@ If you don't want to / don't know how to install python, you can download the ex
 When running this for the first time, you need to run `setup` and `verify` if you have a modified `gameinfo.gi`. After that you can just do `run-mapping` to launch cs2 hammer with CS2KZ enabled. After you quit CS2, `run-mapping` should automatically returns the gameinfo files to their original state.
 
 Alternatively, you can use `run-listen` to run CS2KZ without mapping tools, or use `run-dedicated` (launches a CS2KZ server) and `run-insecure` to run the server and the client separately.
+
+Other players can connect to this server by connect to the anonymous ServerSteamID found in the server console, for example `SV:  ServerSteamID=[A:1:1234567890:12345]`
