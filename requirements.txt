@@ -1,8 +1,3 @@
-protobuf==3.20.3
-gevent
-gevent-eventemitter==2.1
+vdf @ git+https://github.com/solsticegamestudios/vdf.git
 psutil==7.0.0
 requests==2.32.3
-steam @ git+https://github.com/solsticegamestudios/steam@v1.6.1
-vdf @ git+https://github.com/solsticegamestudios/vdf.git@v4.0
-wsproto==1.2.0

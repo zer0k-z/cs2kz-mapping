@@ -1,11 +1,9 @@
 import os 
-from steam.client import SteamClient 
-from steam.client.cdn import CDNClient
 import time
 import common
-import steam.protobufs.steammessages_contentsystem_pb2
+import urllib.request
 
-APP_ID = 730 
+BASE_URL = 'https://raw.githubusercontent.com/SteamDatabase/GameTracking-CS2/refs/heads/master/'
 FILE_PATHS = ['game/csgo/gameinfo.gi', 'game/csgo_core/gameinfo.gi']  
 
 print('Attempting to restore gameinfo files...')
@@ -13,25 +11,19 @@ path = common.get_cs2_path()
 if path is None:
     print('Failed to get CS2 path.')
     exit()
+
+# Download file from the file paths
+for file_path in FILE_PATHS:
+    url = BASE_URL + file_path
+    print(f'Downloading {url}...')
+    file = urllib.request.urlopen(url)
+    if file.getcode() != 200:
+        print(f'Failed to download {url}. ({file.getcode()})')
+        continue
     
-# Initialize Steam client
-print('Initializing Steam client...')
-client = SteamClient()
-client.anonymous_login()
+    with open(os.path.join(path, file_path), 'wb') as f:
+        f.write(file.read())
 
-# Wait for login to complete
-client.wait_event('logged_on', timeout=10)
-
-# Initialize CDN depot
-mycdn = CDNClient(client)
-print('Downloading gameinfo files...')
-for gameinfo in FILE_PATHS:
-    for file in mycdn.iter_files(730, gameinfo):
-        with open(os.path.join(path, gameinfo), 'wb') as f:
-            f.write(file.read())
-        
-# Disconnect from Steam
-client.disconnect()
 print('Done! Closing in 3 seconds...')
 
 # Sleep for 3 seconds before closing
