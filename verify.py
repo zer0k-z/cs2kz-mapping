@@ -20,9 +20,12 @@ for file_path in FILE_PATHS:
     if file.getcode() != 200:
         print(f'Failed to download {url}. ({file.getcode()})')
         continue
-    
-    with open(os.path.join(path, file_path), 'wb') as f:
-        f.write(file.read())
+
+    content = file.read().decode('utf-8').replace('\n', '\r\n')
+    out_path = os.path.join(path, file_path)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, 'wb') as f:
+        f.write(content.encode('utf-8'))
 
 print('Done! Closing in 3 seconds...')
 
