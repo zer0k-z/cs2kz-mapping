@@ -14,6 +14,7 @@ if __name__ == '__main__':
     modify_gameinfo_p2p(gameinfo_path)
     
     cs2 = os.path.join(path, 'game', 'bin', 'win64', 'cs2.exe')
+    print(f"Launching CS2 listen server from '{cs2}'...")
     process = subprocess.Popen([cs2, '-insecure'])
     time.sleep(1)
 

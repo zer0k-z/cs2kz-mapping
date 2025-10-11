@@ -7,4 +7,5 @@ if __name__ == '__main__':
         exit()
 
     cs2 = os.path.join(path, 'game', 'bin', 'win64', 'cs2.exe')
+    print(f"Launching CS2 insecure instance from '{cs2}'...")
     process = subprocess.Popen([cs2, '-insecure'])

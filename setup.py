@@ -95,8 +95,12 @@ if path is None:
 print(f"Setting up CS2KZ in {path}...")
 download_and_extract_metamod(path)
 download_cs2kz(path)
-setup_asset_bin(path)
-setup_metamod_content_path(path)
-
+try:
+    setup_asset_bin(path)
+    setup_metamod_content_path(path)
+except Exception as e:
+    print(f"Warning: Failed to setup asset bin or content path: {e}")
+    print("This might be because mapping tools are probably not installed.")
+    
 print("Setup complete, closing in 3 seconds...")
 time.sleep(3)
