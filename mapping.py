@@ -321,9 +321,3 @@ if __name__ == '__main__':
     
     print('Done! Closing in 3 seconds...')
     time.sleep(3)
-
-#Replace entire file. Stores all three versions in `.versions.txt` in CS2 directory with format:
-
-#metamod=mmsource-2.0.0-git1313-windows.zip
-#cs2kz=v1.2.3
-#mapping_api=a1b2c3d4e5f6...
