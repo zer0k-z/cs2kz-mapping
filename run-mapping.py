@@ -76,6 +76,7 @@ if __name__ == '__main__':
     print(f"Launching CS2 tools from '{cs2_tools_path}'...")
     run_cs2(cs2_tools_path)
     wait_until_dll_loaded("cs2.exe", "cs2kz.dll")
+    time.sleep(3)
 
     # Restore original gameinfo files
     os.remove(gameinfo_path)
