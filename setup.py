@@ -8,38 +8,20 @@ from common import get_cs2_path
 
 
 def download_and_extract_metamod(cs2_dir: str):
-    try:
-        latest_mm_url = "https://mms.alliedmods.net/mmsdrop/2.0/mmsource-latest-windows"
-        response = requests.get(latest_mm_url)
-        response.raise_for_status()
-        
-        mm_download_url = f"https://mms.alliedmods.net/mmsdrop/2.0/{response.text}"
+    releases = requests.get("https://api.github.com/repos/alliedmodders/metamod-source/releases").json()
+    prerelease = next(r for r in releases if r["prerelease"] and not r["draft"])
+    asset = next(a for a in prerelease["assets"] if a["name"].endswith(".zip") and "windows" in a["name"].lower())
+    archive_path = Path(asset["name"])
 
-        archive_path = Path(os.getcwd()) / response.text
+    print(f"Downloading Metamod from {asset['browser_download_url']}...")
+    archive_path.write_bytes(requests.get(asset["browser_download_url"]).content)
 
-        print(f"Downloading Metamod from {mm_download_url}...")
-        with requests.get(mm_download_url, stream=True) as r:
-            r.raise_for_status()
-            with open(archive_path, 'wb') as f:
-                f.write(r.content)
-        print("Download complete.")
+    output_dir_path = Path(cs2_dir) / 'game' / 'csgo'
+    with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+        zip_ref.extractall(output_dir_path)
 
-        output_dir_path = Path(cs2_dir) / 'game' / 'csgo'
-        print(f"Extracting {archive_path} to {cs2_dir}...")
-        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
-            zip_ref.extractall(output_dir_path)
-
-        print(f"Removing temporary file: {archive_path}")
-        os.remove(archive_path)
-
-        print(f"Metamod has been successfully extracted to {output_dir_path}.")
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading Metamod: {e}")
-    except zipfile.BadZipFile as e:
-        print(f"Error extracting Metamod archive: {e}. Ensure the file is a valid ZIP archive.")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    os.remove(archive_path)
+    print(f"Metamod has been successfully extracted to {output_dir_path}.")
 
 def download_cs2kz(cs2_dir: str):
     print(f"Downloading CS2KZ plugin...")
@@ -94,7 +76,7 @@ if path is None:
 
 print(f"Setting up CS2KZ in {path}...")
 download_and_extract_metamod(path)
-download_cs2kz(path)
+# download_cs2kz(path)
 try:
     setup_asset_bin(path)
     setup_metamod_content_path(path)
