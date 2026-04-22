@@ -24,17 +24,25 @@ def wait_until_dll_loaded(exe_name: str, dll_name: str) -> bool:
 
 def run_cs2(cs2_tools_path):
     # Launch tools and wait until cs2.exe is observed before returning.
-    subprocess.Popen([os.path.join(cs2_tools_path, 'csgocfg.exe'), '-insecure', '-gpuraytracing'], creationflags=0x208, cwd=cs2_tools_path,
+    subprocess.run([os.path.join(cs2_tools_path, 'csgocfg.exe'), '-insecure', '-gpuraytracing'], creationflags=0x208, cwd=cs2_tools_path,
     stdout=subprocess.DEVNULL,
     stderr=subprocess.DEVNULL,
     stdin=subprocess.DEVNULL)
     # Wait for cs2.exe to launch.
+    # If we wait for too long and cs2.exe doesn't launch, it might be because the user closed the tools window
+    #  so we should probably exit instead of waiting indefinitely.
+    start_time = time.time()
+    print("Waiting for 'cs2.exe' to launch...")
     while True:
         if any((p.info.get('name') or '').lower() == 'cs2.exe' for p in psutil.process_iter(['name'])):
             break
+        if time.time() - start_time > 2:
+            print("cs2.exe did not launch within 2 seconds. Exiting early...")
+            return False
 
     if os.path.exists('steam_appid.txt'):
         os.remove('steam_appid.txt')
+    return True
 
 if __name__ == '__main__':
     path = get_cs2_path()
@@ -52,12 +60,16 @@ if __name__ == '__main__':
     temp_path = os.path.join(path, 'game', 'csgo', 'gameinfo_temp.gi')
     temp_core_path = os.path.join(path, 'game', 'csgo_core', 'gameinfo_temp.gi')
     if os.path.exists(backup_path):
+        print(f"Removing existing backup at '{backup_path}'...")
         os.remove(backup_path)
     if os.path.exists(backup_core_path):
+        print(f"Removing existing backup at '{backup_core_path}'...")
         os.remove(backup_core_path)
     if os.path.exists(temp_path):
+        print(f"Removing existing temp file at '{temp_path}'...")
         os.remove(temp_path)
     if os.path.exists(temp_core_path):
+        print(f"Removing existing temp file at '{temp_core_path}'...")
         os.remove(temp_core_path)
     print(f"Backing up original gameinfo from '{gameinfo_path}' to '{backup_path}'...")
     shutil.move(gameinfo_path, backup_path)
@@ -68,8 +80,8 @@ if __name__ == '__main__':
     shutil.copyfile(backup_path, temp_path)
     print(f"Creating temp gameinfo at '{temp_core_path}' from backup '{backup_core_path}'...")
     shutil.copyfile(backup_core_path, temp_core_path)
-    
-    
+
+
     # Create a symlink from the temp gameinfo to the original location so that when cs2.exe locks the file, it locks the temp one instead of the original one.
     os.symlink(temp_path, gameinfo_path, target_is_directory=False)
     os.symlink(temp_core_path, gameinfo_core_path, target_is_directory=False)
@@ -78,14 +90,19 @@ if __name__ == '__main__':
 
     cs2_tools_path = os.path.join(path, 'game', 'bin', 'win64')
     print(f"Launching CS2 tools from '{cs2_tools_path}'...")
-    run_cs2(cs2_tools_path)
-    wait_until_dll_loaded("cs2.exe", "cs2kz.dll")
-    time.sleep(3)
-
+    if run_cs2(cs2_tools_path):
+        wait_until_dll_loaded("cs2.exe", "cs2kz.dll")
+        time.sleep(3)
+    else:
+        try:
+            os.remove(temp_path)
+            os.remove(temp_core_path)
+        except OSError as e:
+            print(f"Error occurred while removing temp files: {e}")
     # Restore original gameinfo files
     os.remove(gameinfo_path)
     os.remove(gameinfo_core_path)
     shutil.move(backup_path, gameinfo_path)
     shutil.move(backup_core_path, gameinfo_core_path)
-    print('Done! Closing in 3 seconds...')
+    print('Closing in 3 seconds...')
     time.sleep(3)
