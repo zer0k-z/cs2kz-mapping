@@ -76,7 +76,7 @@ if path is None:
 
 print(f"Setting up CS2KZ in {path}...")
 download_and_extract_metamod(path)
-# download_cs2kz(path)
+download_cs2kz(path)
 try:
     setup_asset_bin(path)
     setup_metamod_content_path(path)
