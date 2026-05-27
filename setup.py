@@ -100,7 +100,7 @@ def modify_sdkenginetools(sdkenginetools_path):
 
 def modify_assettypes_common(assettypes_common_path):
     print(f"Modifying assettypes_common.txt for Particle Asset support...")
-    with open(assettypes_common_path, 'r') as f:
+    with open(assettypes_common_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
     modified_lines = []
@@ -124,12 +124,12 @@ def modify_assettypes_common(assettypes_common_path):
         else:
             modified_lines.append(line)
 
-    with open(assettypes_common_path, 'w') as f:
+    with open(assettypes_common_path, 'w', encoding='utf-8') as f:
         f.writelines(modified_lines)
 
 def modify_csgo_fgd(csgo_fgd_path):
     print(f"Modifying csgo.fgd for CSM support...")
-    with open(csgo_fgd_path, 'r') as f:
+    with open(csgo_fgd_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
     # Find and remove CSM lines
@@ -144,7 +144,7 @@ def modify_csgo_fgd(csgo_fgd_path):
         else:
             modified_lines.append(line)
 
-    with open(csgo_fgd_path, 'w') as f:
+    with open(csgo_fgd_path, 'w', encoding='utf-8') as f:
         f.writelines(modified_lines)
 
 path = get_cs2_path()
