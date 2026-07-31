@@ -1,10 +1,59 @@
 import time
 import winreg
 import os
+import sys
+import ctypes
+import urllib.request
 import vdf
-import subprocess
 import shutil
-import psutil
+
+GAMEINFO_BASE_URL = 'https://raw.githubusercontent.com/SteamDatabase/GameTracking-CS2/refs/heads/master/'
+GAMEINFO_FILE_PATHS = [os.path.join('game', 'csgo', 'gameinfo.gi'), os.path.join('game', 'csgo_core', 'gameinfo.gi')]
+
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+
+def ensure_admin():
+    if is_admin():
+        return
+
+    print("Administrator privileges are required. Requesting elevation...")
+    if getattr(sys, 'frozen', False):
+        # Running as a compiled executable (e.g. PyInstaller); sys.executable IS the program.
+        executable = sys.executable
+        args = sys.argv[1:]
+    else:
+        executable = sys.executable
+        args = [os.path.abspath(sys.argv[0])] + sys.argv[1:]
+    params = ' '.join(f'"{a}"' for a in args)
+
+    ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", executable, params, None, 1)
+    if int(ret) <= 32:
+        print("Elevation was cancelled or failed. Please re-run this program as Administrator.")
+        time.sleep(3)
+    sys.exit(0)
+
+def download_gameinfo_file(path, relative_path):
+    """Download a single gameinfo.gi file from SteamDatabase's GameTracking-CS2 repo."""
+    url = GAMEINFO_BASE_URL + relative_path.replace(os.sep, '/')
+    print(f'Downloading {url}...')
+    file = urllib.request.urlopen(url)
+    if file.getcode() != 200:
+        raise RuntimeError(f'Failed to download {url}. ({file.getcode()})')
+
+    content = file.read().decode('utf-8').replace('\n', '\r\n')
+    out_path = os.path.join(path, relative_path)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, 'wb') as f:
+        f.write(content.encode('utf-8'))
+
+def download_gameinfo_files(path):
+    """Download clean copies of all gameinfo.gi files, overwriting whatever is currently there."""
+    for relative_path in GAMEINFO_FILE_PATHS:
+        download_gameinfo_file(path, relative_path)
 
 def get_steam_directory():
     """Get the Steam installation directory from the Windows Registry."""
