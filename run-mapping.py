@@ -44,33 +44,61 @@ def run_cs2(cs2_tools_path):
         os.remove('steam_appid.txt')
     return True
 
+def recover_gameinfo(path, relative_gi_path, backup_path, temp_path, label):
+    # gameinfo.gi is only ever a symlink while cs2.exe is running under this tool.
+    # If it's still a symlink here, a previous run crashed/was killed before it could
+    # restore the original file, so we need to recover before touching backup/temp files.
+    gi_path = os.path.join(path, relative_gi_path)
+    if os.path.islink(gi_path):
+        print(f"Detected leftover symlink at '{gi_path}' from an unclean previous run.")
+        os.remove(gi_path)
+        if os.path.isfile(backup_path):
+            print(f"Restoring '{label}' from backup '{backup_path}'...")
+            shutil.move(backup_path, gi_path)
+        else:
+            print(f"No valid backup found for '{label}'. Downloading a clean copy instead (same as verify.py)...")
+            try:
+                download_gameinfo_file(path, relative_gi_path)
+            except Exception as e:
+                print(f"Failed to download a clean copy of '{label}': {e}")
+                print("Please run verify.py or verify integrity of game files via Steam, then try again.")
+                time.sleep(5)
+                exit()
+
+    # Clean up any stale backup/temp files left over from a previous run.
+    # Safe now: gi_path is confirmed to be a real file, not a symlink depending on them.
+    if os.path.lexists(backup_path):
+        print(f"Removing stale backup at '{backup_path}'...")
+        os.remove(backup_path)
+    if os.path.lexists(temp_path):
+        print(f"Removing stale temp file at '{temp_path}'...")
+        os.remove(temp_path)
+
 if __name__ == '__main__':
+    # Creating symlinks below requires admin rights unless Developer Mode is enabled,
+    # which is why this can intermittently fail depending on the user's system. Relaunch elevated if needed.
+    ensure_admin()
+
     path = get_cs2_path()
     if path is None:
         print('Failed to get CS2 path. Closing in 3 seconds...')
         time.sleep(3)
         exit()
-    
-    gameinfo_path = os.path.join(path, 'game', 'csgo', 'gameinfo.gi')
-    gameinfo_core_path = os.path.join(path, 'game', 'csgo_core', 'gameinfo.gi')
+
+    gameinfo_relative_path = os.path.join('game', 'csgo', 'gameinfo.gi')
+    gameinfo_core_relative_path = os.path.join('game', 'csgo_core', 'gameinfo.gi')
+    gameinfo_path = os.path.join(path, gameinfo_relative_path)
+    gameinfo_core_path = os.path.join(path, gameinfo_core_relative_path)
 
     # Backup original gameinfo files
     backup_path = os.path.join(path, 'game', 'csgo', 'gameinfo_original.gi')
     backup_core_path = os.path.join(path, 'game', 'csgo_core', 'gameinfo_original.gi')
     temp_path = os.path.join(path, 'game', 'csgo', 'gameinfo_temp.gi')
     temp_core_path = os.path.join(path, 'game', 'csgo_core', 'gameinfo_temp.gi')
-    if os.path.exists(backup_path):
-        print(f"Removing existing backup at '{backup_path}'...")
-        os.remove(backup_path)
-    if os.path.exists(backup_core_path):
-        print(f"Removing existing backup at '{backup_core_path}'...")
-        os.remove(backup_core_path)
-    if os.path.exists(temp_path):
-        print(f"Removing existing temp file at '{temp_path}'...")
-        os.remove(temp_path)
-    if os.path.exists(temp_core_path):
-        print(f"Removing existing temp file at '{temp_core_path}'...")
-        os.remove(temp_core_path)
+
+    recover_gameinfo(path, gameinfo_relative_path, backup_path, temp_path, 'csgo/gameinfo.gi')
+    recover_gameinfo(path, gameinfo_core_relative_path, backup_core_path, temp_core_path, 'csgo_core/gameinfo.gi')
+
     print(f"Backing up original gameinfo from '{gameinfo_path}' to '{backup_path}'...")
     shutil.move(gameinfo_path, backup_path)
     print(f"Backing up original gameinfo from '{gameinfo_core_path}' to '{backup_core_path}'...")
