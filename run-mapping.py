@@ -3,6 +3,8 @@ import time
 from common import *
 import os
 import shutil
+import psutil
+import subprocess
 
 def wait_until_dll_loaded(exe_name: str, dll_name: str) -> bool:
     print(f"Waiting for '{dll_name}' to be loaded by '{exe_name}'...")
@@ -45,13 +47,15 @@ def run_cs2(cs2_tools_path):
     return True
 
 def recover_gameinfo(path, relative_gi_path, backup_path, temp_path, label):
-    # gameinfo.gi is only ever a symlink while cs2.exe is running under this tool.
-    # If it's still a symlink here, a previous run crashed/was killed before it could
-    # restore the original file, so we need to recover before touching backup/temp files.
+    # gameinfo.gi is only ever a symlink (or briefly missing, mid-swap) while this tool is
+    # actively running. If it's still in that state here, a previous run crashed, was killed,
+    # or failed to create the symlink (see create_symlink_or_elevate) before it could restore
+    # the original file, so we need to recover before touching backup/temp files.
     gi_path = os.path.join(path, relative_gi_path)
-    if os.path.islink(gi_path):
-        print(f"Detected leftover symlink at '{gi_path}' from an unclean previous run.")
-        os.remove(gi_path)
+    if os.path.islink(gi_path) or not os.path.exists(gi_path):
+        print(f"Detected leftover/incomplete state at '{gi_path}' from an unclean previous run.")
+        if os.path.lexists(gi_path):
+            os.remove(gi_path)
         if os.path.isfile(backup_path):
             print(f"Restoring '{label}' from backup '{backup_path}'...")
             shutil.move(backup_path, gi_path)
@@ -74,11 +78,26 @@ def recover_gameinfo(path, relative_gi_path, backup_path, temp_path, label):
         print(f"Removing stale temp file at '{temp_path}'...")
         os.remove(temp_path)
 
-if __name__ == '__main__':
-    # Creating symlinks below requires admin rights unless Developer Mode is enabled,
-    # which is why this can intermittently fail depending on the user's system. Relaunch elevated if needed.
-    ensure_admin()
+def create_symlink_or_elevate(temp_path, gi_path):
+    # Creating symlinks on Windows requires admin rights unless Developer Mode is enabled,
+    # so this can fail depending on the user's system. Only escalate if it actually fails,
+    # rather than always prompting for admin up front.
+    try:
+        os.symlink(temp_path, gi_path, target_is_directory=False)
+    except OSError as e:
+        if is_admin():
+            # Already elevated and it still failed - elevation won't help, give up.
+            print(f"Failed to create symlink at '{gi_path}' even with admin rights: {e}")
+            print("Closing in 5 seconds...")
+            time.sleep(5)
+            exit()
+        print(f"Failed to create symlink at '{gi_path}': {e}")
+        print("This requires admin rights (or Developer Mode). Requesting elevation and restarting...")
+        # ensure_admin() relaunches this script elevated and always exits the current process;
+        # on the next run, recover_gameinfo() will clean up the half-finished state left behind.
+        ensure_admin()
 
+if __name__ == '__main__':
     path = get_cs2_path()
     if path is None:
         print('Failed to get CS2 path. Closing in 3 seconds...')
@@ -111,8 +130,8 @@ if __name__ == '__main__':
 
 
     # Create a symlink from the temp gameinfo to the original location so that when cs2.exe locks the file, it locks the temp one instead of the original one.
-    os.symlink(temp_path, gameinfo_path, target_is_directory=False)
-    os.symlink(temp_core_path, gameinfo_core_path, target_is_directory=False)
+    create_symlink_or_elevate(temp_path, gameinfo_path)
+    create_symlink_or_elevate(temp_core_path, gameinfo_core_path)
     modify_gameinfo(gameinfo_path, gameinfo_core_path)
 
 
