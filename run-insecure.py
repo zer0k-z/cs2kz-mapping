@@ -1,4 +1,5 @@
 from common import *
+import subprocess
 if __name__ == '__main__':
     path = get_cs2_path()
     if path is None:
