@@ -4,3 +4,4 @@ dist/
 *.spec
 .venv
 .vscode
+steamcmd/

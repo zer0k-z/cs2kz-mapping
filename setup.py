@@ -1,10 +1,15 @@
 import requests
+import vpk
 import zipfile
 import os
 import shutil
+import subprocess
 from pathlib import Path
 import time
 from common import get_cs2_path
+
+STEAMCMD_URL = "https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip"
+WORKSHOP_ID = "3469155349"
 
 
 def download_and_extract_metamod(cs2_dir: str):
@@ -60,6 +65,40 @@ def download_cs2kz(cs2_dir: str):
         os.makedirs(path)
     with open(os.path.join(path, "csgo_internal.fgd"), "wb") as file:
         file.write(response.content)
+
+def download_workshop_addon(cs2_dir: str):
+    steamcmd_dir = Path("steamcmd")
+    steamcmd_exe = steamcmd_dir / "steamcmd.exe"
+    if not steamcmd_exe.exists():
+        print(f"Downloading SteamCMD from {STEAMCMD_URL}...")
+        steamcmd_dir.mkdir(exist_ok=True)
+        archive_path = steamcmd_dir / "steamcmd.zip"
+        archive_path.write_bytes(requests.get(STEAMCMD_URL).content)
+        with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+            zip_ref.extractall(steamcmd_dir)
+        os.remove(archive_path)
+
+    print(f"Downloading workshop item {WORKSHOP_ID}...")
+    # SteamCMD exit codes are unreliable, so check for the downloaded files instead.
+    subprocess.run([str(steamcmd_exe), "+login", "anonymous",
+                    "+workshop_download_item", "730", WORKSHOP_ID, "+quit"])
+
+    content_dir = steamcmd_dir / "steamapps" / "workshop" / "content" / "730" / WORKSHOP_ID
+    # Multi-archive items pair a _dir.vpk index with _NNN.vpk data files; only open the index.
+    vpks = list(content_dir.glob("*_dir.vpk")) or list(content_dir.glob("*.vpk"))
+    if not vpks:
+        raise Exception(f"No .vpk found in {content_dir}")
+
+    output_dir_path = Path(cs2_dir) / "game" / "csgo"
+    for vpk_path in vpks:
+        with vpk.open(str(vpk_path)) as pak:
+            for entry_path in pak:
+                out_path = output_dir_path / entry_path
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                pak[entry_path].save(str(out_path))
+        print(f"{vpk_path.name} has been extracted to {output_dir_path}.")
+
+    shutil.rmtree(content_dir)
 
 def setup_asset_bin(cs2_dir: str):
     print(f"Setting up asset bin...")
@@ -155,6 +194,10 @@ if path is None:
 print(f"Setting up CS2KZ in {path}...")
 download_and_extract_metamod(path)
 download_cs2kz(path)
+try:
+    download_workshop_addon(path)
+except Exception as e:
+    print(f"Warning: Failed to download workshop addon: {e}")
 try:
     setup_asset_bin(path)
     setup_metamod_content_path(path)

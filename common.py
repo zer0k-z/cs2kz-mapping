@@ -130,6 +130,16 @@ def modify_gameinfo(gameinfo_path, core_gameinfo_path):
     with open(core_gameinfo_path, 'w') as f:
         f.writelines(modified_lines)
 
+def modify_gameinfo_flat_file_addons(gameinfo_path):
+    """Allow loose (unpacked) addon files to load outside of tools mode."""
+    with open(gameinfo_path, 'r') as f:
+        content = f.read()
+
+    content = content.replace('"RestrictFlatFileAddonsToTools" "1"', '"RestrictFlatFileAddonsToTools" "0"')
+
+    with open(gameinfo_path, 'w') as f:
+        f.write(content)
+
 def modify_gameinfo_p2p(gameinfo_path):
     
     modified_lines = []
