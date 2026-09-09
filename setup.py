@@ -14,7 +14,7 @@ WORKSHOP_ID = "3469155349"
 
 def download_and_extract_metamod(cs2_dir: str):
     releases = requests.get("https://api.github.com/repos/alliedmodders/metamod-source/releases").json()
-    prerelease = next(r for r in releases if r["prerelease"] and not r["draft"])
+    prerelease = next(r for r in releases if r['tag_name'] == '2.0.0.1411')
     asset = next(a for a in prerelease["assets"] if a["name"].endswith(".zip") and "windows" in a["name"].lower())
     archive_path = Path(asset["name"])
 
